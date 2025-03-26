@@ -91,18 +91,48 @@ app.post("/tasks", async (req, res) => {
 });
 
 // 4. Modifier une tâche existante
+// app.put("/tasks/:id", async (req, res) => {
+//   try {
+//     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
+//       new: true,
+//     });
+//     if (!updatedTask)
+//       return res.status(404).json({ message: "Tâche non trouvée" });
+//     res.json(updatedTask);
+//   } catch (err) {
+//     res.status(400).json({ error: err.message });
+//   }
+// });
+
 app.put("/tasks/:id", async (req, res) => {
   try {
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    if (!updatedTask)
-      return res.status(404).json({ message: "Tâche non trouvée" });
-    res.json(updatedTask);
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Tâche non trouvée" });
+
+    const modifications = [];
+    for (let key in req.body) {
+      if (task[key] !== undefined && task[key] !== req.body[key]) {
+        modifications.push({
+          champModifie: key,
+          ancienneValeur: task[key],
+          nouvelleValeur: req.body[key],
+          date: new Date(),
+        });
+        task[key] = req.body[key]; // Met à jour la valeur
+      }
+    }
+
+    if (modifications.length > 0) {
+      task.historiqueModifications.push(...modifications);
+    }
+
+    await task.save();
+    res.json(task);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
+
 
 // 5. Supprimer une tâche
 app.delete("/tasks/:id", async (req, res) => {
@@ -206,6 +236,50 @@ app.delete("/tasks/:taskId/comments/:commentId", async (req, res) => {
     }
 });
   
+app.post("/tasks/:id/comments", async (req, res) => {
+  try {
+    const { auteur, contenu } = req.body;
+    const task = await Task.findById(req.params.id);
+
+    if (!task) return res.status(404).json({ message: "Tâche non trouvée" });
+
+    // Ajouter le commentaire
+    task.commentaires.push({ auteur, contenu, date: new Date() });
+    await task.save();
+
+    res.status(201).json(task);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/tasks/:taskId/comments/:commentId", async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) return res.status(404).json({ message: "Tâche non trouvée" });
+
+    // Supprimer le commentaire
+    task.commentaires = task.commentaires.filter(
+      (comment) => comment._id.toString() !== req.params.commentId
+    );
+
+    await task.save();
+    res.json({ message: "Commentaire supprimé", task });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/tasks/:id/history", async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id, "historiqueModifications");
+    if (!task) return res.status(404).json({ message: "Tâche non trouvée" });
+
+    res.json(task.historiqueModifications);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // **Démarrage du serveur**

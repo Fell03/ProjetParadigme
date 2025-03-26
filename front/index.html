@@ -22,13 +22,20 @@
     </form>
 
     <h2>Filtres</h2>
-    <select id="filterStatut">
-        <option value="">Tous</option>
-        <option value="à faire">À faire</option>
-        <option value="en cours">En cours</option>
-        <option value="terminée">Terminée</option>
-    </select>
-    <button onclick="loadTasks()">Filtrer</button>
+<select id="filterStatut">
+    <option value="">Tous</option>
+    <option value="à faire">À faire</option>
+    <option value="en cours">En cours</option>
+    <option value="terminée">Terminée</option>
+</select>
+<select id="filterPriorite">
+    <option value="">Toutes priorités</option>
+    <option value="basse">Basse</option>
+    <option value="moyenne">Moyenne</option>
+    <option value="haute">Haute</option>
+    <option value="critique">Critique</option>
+</select>
+<button onclick="loadTasks()">Filtrer</button>
 
     <h2>Liste des tâches</h2>
     <ul id="taskList"></ul>
