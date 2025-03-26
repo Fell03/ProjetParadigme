@@ -103,8 +103,20 @@ async function toggleDetails(taskId) {
         let sousTachesHtml = `<h4>Sous-tâches :</h4>`;
         sousTachesHtml += task.sousTaches.length > 0 ? `<ul>` + 
             task.sousTaches.map(sub => 
-                `<li>${sub.titre} - ${sub.statut} (Échéance : ${new Date(sub.echeance).toLocaleDateString()})</li>`
+                `<li>${sub.titre} - ${sub.statut} (Échéance : ${new Date(sub.echeance).toLocaleDateString()}) 
+                <button onclick="deleteSubtask('${task._id}', '${sub._id}')">🗑</button></li>`
             ).join("") + `</ul>` : `<p>Aucune sous-tâche.</p>`;
+
+        let addSubtaskForm = `
+            <h4>Ajouter une sous-tâche :</h4>
+            <input type="text" id="subtask-title-${taskId}" placeholder="Titre">
+            <select id="subtask-status-${taskId}">
+                <option value="à faire">À faire</option>
+                <option value="en cours">En cours</option>
+                <option value="terminée">Terminée</option>
+            </select>
+            <button onclick="addSubtask('${task._id}')">➕ Ajouter</button>
+        `;
 
         let commentairesHtml = `<h4>Commentaires :</h4>`;
         commentairesHtml += task.commentaires.length > 0 ? `<ul>` + 
@@ -112,7 +124,7 @@ async function toggleDetails(taskId) {
                 `<li><strong>${comment.auteur.nom}</strong>: ${comment.contenu} (${new Date(comment.date).toLocaleString()})</li>`
             ).join("") + `</ul>` : `<p>Aucun commentaire.</p>`;
 
-        detailsSection.innerHTML = sousTachesHtml + commentairesHtml;
+        detailsSection.innerHTML = sousTachesHtml + addSubtaskForm + commentairesHtml;
         detailsSection.style.display = "block";
     } else {
         detailsSection.style.display = "none";
@@ -127,6 +139,34 @@ async function showHistory(taskId) {
     alert("Historique des modifications : \n" + history.map(
         h => `Champ : ${h.champModifie}, Avant : ${h.ancienneValeur}, Après : ${h.nouvelleValeur}, Date : ${new Date(h.date).toLocaleString()}`
     ).join("\n"));
+}
+
+// **8. Ajouter une sous-tâche**
+async function addSubtask(taskId) {
+    const titre = document.getElementById(`subtask-title-${taskId}`).value;
+    const statut = document.getElementById(`subtask-status-${taskId}`).value;
+
+    if (!titre) {
+        alert("Le titre de la sous-tâche est requis !");
+        return;
+    }
+
+    await fetch(`${apiUrl}/${taskId}/subtasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titre, statut })
+    });
+
+    toggleDetails(taskId);
+}
+
+// **9. Supprimer une sous-tâche**
+async function deleteSubtask(taskId, subtaskId) {
+    if (!confirm("Voulez-vous vraiment supprimer cette sous-tâche ?")) return;
+
+    await fetch(`${apiUrl}/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" });
+
+    toggleDetails(taskId);
 }
 
 // Charger les tâches au démarrage
